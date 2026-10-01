@@ -1,11 +1,14 @@
-### Listar todos os donos
-GET http://localhost:5000/donos
+@baseUrl = http://localhost:5000
 
-### Buscar um dono pelo id
-GET http://localhost:5000/donos/1
+### Listar todos os donos - 200
+GET {{baseUrl}}/donos
 
-### Cadastrar um novo dono
-POST http://localhost:5000/donos
+### Buscar um dono pelo id - 200
+GET {{baseUrl}}/donos/1
+
+### Cadastrar um novo dono - 201 (execute antes dos exemplos que usam novoDono)
+# @name novoDono
+POST {{baseUrl}}/donos
 Content-Type: application/json
 
 {
@@ -13,55 +16,127 @@ Content-Type: application/json
     "telefone": "45999110004"
 }
 
-### Atualizar um dono
-PUT http://localhost:5000/donos/1
+### Atualizar o dono criado acima - 200
+PUT {{baseUrl}}/donos/{{novoDono.response.body.$.id}}
 Content-Type: application/json
 
 {
-    "nome": "Ana Paula Ribeiro da Silva",
-    "telefone": "45999110001"
+    "nome": "Diego Souza da Silva",
+    "telefone": "45999110004"
 }
 
-### Remover um dono
-DELETE http://localhost:5000/donos/3
+### Listar todos os pets com dono_nome - 200
+GET {{baseUrl}}/pets
 
+### Filtrar por dono_id - 200 (Rex e Mimi no banco inicial)
+GET {{baseUrl}}/pets?dono_id=1
 
-### ----------------------------------------------------------
-### DAQUI PARA BAIXO SAO AS ROTAS QUE VOCE VAI ESCREVER
-### Elas so vao funcionar depois que voce criar as rotas de pets
-### no arquivo app.py
-### ----------------------------------------------------------
+### Buscar um pet pelo id - 200
+GET {{baseUrl}}/pets/1
 
-### Listar todos os pets (com o nome do dono)
-GET http://localhost:5000/pets
-
-### Listar apenas os pets de um dono (filtro por query param)
-GET http://localhost:5000/pets?dono_id=1
-
-### Buscar um pet pelo id
-GET http://localhost:5000/pets/1
-
-### Cadastrar um novo pet
-POST http://localhost:5000/pets
+### Cadastrar um novo pet - 201
+# @name novoPet
+POST {{baseUrl}}/pets
 Content-Type: application/json
 
 {
     "nome": "Bidu",
     "especie": "cachorro",
     "idade": 2,
-    "dono_id": 1
+    "dono_id": {{novoDono.response.body.$.id}}
 }
 
-### Atualizar um pet
-PUT http://localhost:5000/pets/1
+### Atualizar o pet criado acima - 200
+PUT {{baseUrl}}/pets/{{novoPet.response.body.$.id}}
 Content-Type: application/json
 
 {
-    "nome": "Rex",
+    "nome": "Bidu",
     "especie": "cachorro",
-    "idade": 5,
+    "idade": 3,
+    "dono_id": {{novoDono.response.body.$.id}}
+}
+
+### Pet inexistente - 404
+GET {{baseUrl}}/pets/999
+
+### Campos obrigatorios ausentes - 400
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "Bidu"
+}
+
+### Desafio: cadastrar com dono inexistente - 404, Dono nao encontrado
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "Bidu",
+    "especie": "cachorro",
+    "idade": 2,
+    "dono_id": 999
+}
+
+### Atualizar com dono inexistente - 404, sem alterar o pet
+PUT {{baseUrl}}/pets/{{novoPet.response.body.$.id}}
+Content-Type: application/json
+
+{
+    "nome": "Bidu",
+    "especie": "cachorro",
+    "idade": 3,
+    "dono_id": 999
+}
+
+### Atualizar pet inexistente - 404
+PUT {{baseUrl}}/pets/999
+Content-Type: application/json
+
+{
+    "nome": "Bidu",
+    "especie": "cachorro",
+    "idade": 3,
     "dono_id": 1
 }
 
-### Remover um pet
-DELETE http://localhost:5000/pets/5
+### Atualizar sem todos os campos - 400
+PUT {{baseUrl}}/pets/1
+Content-Type: application/json
+
+{
+    "nome": "Rex"
+}
+
+### Filtro invalido - 400
+GET {{baseUrl}}/pets?dono_id=abc
+
+### Dono inexistente no filtro - 200, lista vazia
+GET {{baseUrl}}/pets?dono_id=999
+
+### Dono inexistente - 404
+GET {{baseUrl}}/donos/999
+
+### Dono com campos ausentes - 400
+POST {{baseUrl}}/donos
+Content-Type: application/json
+
+{
+    "nome": "Diego"
+}
+
+### Proteger dono que ainda possui pets - 400
+DELETE {{baseUrl}}/donos/{{novoDono.response.body.$.id}}
+
+### Remover o pet criado acima - 200
+DELETE {{baseUrl}}/pets/{{novoPet.response.body.$.id}}
+
+### Remover um pet inexistente - 404
+DELETE {{baseUrl}}/pets/999
+
+### Remover o dono criado acima, agora sem pets - 200
+DELETE {{baseUrl}}/donos/{{novoDono.response.body.$.id}}
+
+### Remover um dono inexistente - 404
+DELETE {{baseUrl}}/donos/999

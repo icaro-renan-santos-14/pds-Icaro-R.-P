@@ -6,6 +6,10 @@ Este repositorio vai crescer durante todo o trimestre. Comecamos com uma API
 simples usando Flask e sqlite3, e ao longo das aulas ela vai ganhar ORM,
 separacao em camadas, login e, no final, um front-end em React.
 
+Na **Aula 02**, o acesso ao SQLite passou a usar **Flask-SQLAlchemy**. As
+classes `Dono` e `Pet` representam as tabelas, e as rotas usam objetos Python
+para consultar, cadastrar, atualizar e remover registros.
+
 **Nao apague nem recomece o projeto a cada aula.** O codigo evolui aqui dentro.
 
 ## Como rodar
@@ -13,11 +17,13 @@ separacao em camadas, login e, no final, um front-end em React.
 ### No GitHub Codespaces (recomendado)
 
 1. Clique em **Code > Codespaces > Create codespace on main**.
-2. Espere a preparacao terminar. O Flask ja e instalado automaticamente.
-3. No terminal, entre na pasta do back-end e crie o banco:
+2. Espere a preparacao terminar. As dependencias sao instaladas automaticamente.
+3. No terminal, entre na pasta do back-end, atualize as dependencias (tambem
+   necessario em um Codespace que ja existia) e crie o banco:
 
 ```
 cd backend
+pip install -r requirements.txt
 python criar_banco.py
 ```
 
@@ -40,12 +46,19 @@ O servidor sobe em `http://localhost:5000`.
 
 ## Como testar as rotas
 
-Abra o arquivo `backend/requisicoes.http` e clique em **Send Request** acima de
-cada requisicao. A resposta aparece ao lado.
+Abra o arquivo `backend/requisicoes.http` com a extensao **REST Client** e clique
+em **Send Request** acima de cada requisicao. A resposta aparece ao lado.
+Execute os exemplos na ordem: as requisicoes nomeadas `novoDono` e `novoPet`
+fornecem os IDs usados para atualizar e remover os cadastros de teste.
 
-O arquivo `petshop.db` nao vai para o GitHub, ele esta no `.gitignore`. Sempre
-que voce abrir o projeto em um lugar novo, rode `python criar_banco.py` para
-recriar o banco com os dados de exemplo.
+O banco agora fica em `backend/instance/petshop.db`. Tanto `instance/` quanto
+`*.db` estao no `.gitignore`. Rode `python criar_banco.py` ao abrir o projeto
+em um lugar novo: ele cria as tabelas e insere os 3 donos e 5 pets de exemplo
+somente se nao houver donos cadastrados. Rodar novamente preserva os dados.
+
+O antigo `backend/petshop.db` da Aula 01 nao e mais usado. Os dados dele nao
+sao transferidos automaticamente para o novo arquivo. Se precisar guarda-los,
+faca uma copia antes de remover o banco antigo.
 
 ## Modelo de dados
 
@@ -69,13 +82,32 @@ recriar o banco com os dados de exemplo.
 
 ## Contrato das rotas
 
-As rotas de **donos** ja estao prontas no `app.py`. Use elas como modelo.
-As rotas de **pets** sao a sua tarefa.
+As cinco rotas de **donos** e as cinco rotas de **pets** usam ORM no `app.py`.
+Os metodos `to_dict()` convertem os objetos em dicionarios para a resposta JSON.
+
+### Donos
+
+| Metodo | URL | Resultado |
+|--------|-----|-----------|
+| GET | `/donos` | `200`: lista de donos |
+| GET | `/donos/{id}` | `200`: dono; `404`: dono inexistente |
+| POST | `/donos` | `201`: dono criado; `400`: dados invalidos |
+| PUT | `/donos/{id}` | `200`: dono atualizado; `400`: dados invalidos; `404`: dono inexistente |
+| DELETE | `/donos/{id}` | `200`: dono removido; `404`: dono inexistente |
+
+POST e PUT recebem `nome` e `telefone` como textos nao vazios. Dados ausentes
+ou invalidos retornam `{"erro": "Informe nome e telefone"}`. Um dono
+inexistente retorna `{"erro": "Dono nao encontrado"}`.
+
+Para preservar o relacionamento, DELETE de um dono que ainda possui pets
+retorna `400` com `{"erro": "Dono possui pets cadastrados"}`. Transfira ou
+remova os pets antes de excluir o dono.
 
 ### GET /pets
 
 Lista todos os pets. A resposta traz o **nome do dono**, e nao apenas o
-`dono_id`. Para isso voce precisa usar JOIN na consulta.
+`dono_id`. O relacionamento `pet.dono` fornece o nome dentro de `to_dict()`,
+sem escrever JOIN manualmente.
 
 Resposta `200`:
 
@@ -97,6 +129,11 @@ Resposta `200`:
 A mesma rota acima aceita um filtro opcional por query param. Se o `dono_id`
 for enviado, retorna apenas os pets daquele dono. Se nao for enviado, retorna
 todos.
+
+O valor e convertido para inteiro antes de `Pet.query.filter_by(...).all()`.
+Um filtro como `?dono_id=abc` retorna `400` com
+`{"erro": "dono_id deve ser um numero inteiro"}`. Um dono sem pets (ou que
+nao existe) retorna uma lista vazia com `200`.
 
 ### GET /pets/{id}
 
@@ -125,13 +162,25 @@ Resposta `201`: o pet criado, com o `id` gerado pelo banco.
 
 Resposta `400`: `{"erro": "Informe nome, especie, idade e dono_id"}`
 
+Resposta `404`: `{"erro": "Dono nao encontrado"}` quando o `dono_id` nao existe,
+incluindo o desafio com `dono_id: 999`.
+
+`nome` e `especie` devem ser textos nao vazios, `idade` deve ser um inteiro
+nao negativo e `dono_id` deve ser um inteiro. Campos ausentes, nulos, tipos
+invalidos ou um corpo que nao seja um objeto JSON retornam `400`.
+
 ### PUT /pets/{id}
 
 Atualiza um pet. Recebe os mesmos campos do POST.
 
-Resposta `200`: o pet atualizado.
+Resposta `200`: o pet atualizado, incluindo `dono_nome`.
+
+Resposta `400`: `{"erro": "Informe nome, especie, idade e dono_id"}`.
 
 Resposta `404`: `{"erro": "Pet nao encontrado"}`
+
+Se o novo dono nao existir, retorna `404` com
+`{"erro": "Dono nao encontrado"}`, sem alterar o pet.
 
 ### DELETE /pets/{id}
 
@@ -147,7 +196,7 @@ Quando terminar, salve o trabalho no GitHub:
 
 ```
 git add .
-git commit -m "aula01: api base"
+git commit -m "aula02: api com orm"
 git push
 ```
 
@@ -160,8 +209,9 @@ laboratorio.
 pds-seunome/
 ├── .devcontainer/           configuracao do Codespaces
 ├── backend/                 a API
-│   ├── app.py               as rotas
+│   ├── app.py               modelos Dono/Pet e rotas com ORM
 │   ├── criar_banco.py       cria as tabelas e os dados de exemplo
+│   ├── instance/            banco local, ignorado pelo Git
 │   ├── requisicoes.http     requisicoes de teste
 │   └── requirements.txt
 ├── exercicios/              exercicios avulsos de cada aula

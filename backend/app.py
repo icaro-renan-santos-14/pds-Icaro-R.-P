@@ -6,8 +6,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///petshop.db"
 
 db = SQLAlchemy(app)
 
-
-# Cada classe representa uma tabela; cada objeto representa um registro.
 class Dono(db.Model):
     __tablename__ = "donos"
 

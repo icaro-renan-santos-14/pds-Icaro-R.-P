@@ -140,3 +140,15 @@ DELETE {{baseUrl}}/donos/{{novoDono.response.body.$.id}}
 
 ### Remover um dono inexistente - 404
 DELETE {{baseUrl}}/donos/999
+
+### Aula 03: pets do dono 1 (lista com Rex e Mimi) - 200
+GET {{baseUrl}}/donos/1/pets
+
+### Aula 03: dono sem pets (execute apos criar novoDono) - 200, lista vazia
+GET {{baseUrl}}/donos/{{novoDono.response.body.$.id}}/pets
+
+### Aula 03: pets de dono inexistente - 404
+GET {{baseUrl}}/donos/999/pets
+
+### Aula 03: desafio - detalhes do dono incluindo seus pets - 200
+GET {{baseUrl}}/donos/1?incluir_pets=1

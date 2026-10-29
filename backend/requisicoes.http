@@ -68,7 +68,7 @@ Content-Type: application/json
     "nome": "Bidu"
 }
 
-### Desafio: cadastrar com dono inexistente - 404, Dono nao encontrado
+### Aula 05: cadastrar com dono inexistente - 400, lista de erros
 POST {{baseUrl}}/pets
 Content-Type: application/json
 
@@ -79,7 +79,7 @@ Content-Type: application/json
     "dono_id": 999
 }
 
-### Atualizar com dono inexistente - 404, sem alterar o pet
+### Aula 05: atualizar com dono inexistente - 400, sem alterar o pet
 PUT {{baseUrl}}/pets/{{novoPet.response.body.$.id}}
 Content-Type: application/json
 
@@ -140,3 +140,59 @@ DELETE {{baseUrl}}/donos/{{novoDono.response.body.$.id}}
 
 ### Remover um dono inexistente - 404
 DELETE {{baseUrl}}/donos/999
+
+### Aula 05: idade em texto - 400
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "Teste",
+    "especie": "cachorro",
+    "idade": "dois",
+    "dono_id": 1
+}
+
+### Aula 05: idade negativa - 400
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "Teste",
+    "especie": "cachorro",
+    "idade": -5,
+    "dono_id": 1
+}
+
+### Aula 05: nome vazio - 400
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "   ",
+    "especie": "cachorro",
+    "idade": 2,
+    "dono_id": 1
+}
+
+### Aula 05: varios erros de uma vez - 400
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+    "nome": "",
+    "especie": "",
+    "idade": "dois",
+    "dono_id": 999
+}
+
+### Aula 05: conferir que nao criou pet invalido - 200
+GET {{baseUrl}}/pets
+
+### Aula 05: dono com nome vazio - 400
+POST {{baseUrl}}/donos
+Content-Type: application/json
+
+{
+    "nome": " ",
+    "telefone": ""
+}

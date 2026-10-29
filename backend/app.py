@@ -85,7 +85,20 @@ def buscar_dono(dono_id):
     if dono is None:
         return jsonify({"erro": "Dono nao encontrado"}), 404
 
-    return jsonify(dono.to_dict())
+    resultado = dono.to_dict()
+    # Desafio Aula 03: incluir os pets somente quando solicitado,
+    # preservando o JSON original da Aula 02 por padrao.
+    if request.args.get("incluir_pets") == "1":
+        resultado["pets"] = [pet.to_dict() for pet in dono.pets]
+    return jsonify(resultado)
+
+
+@app.route("/donos/<int:dono_id>/pets", methods=["GET"])
+def listar_pets_do_dono(dono_id):
+    dono = db.session.get(Dono, dono_id)
+    if dono is None:
+        return jsonify({"erro": "Dono nao encontrado"}), 404
+    return jsonify([pet.to_dict() for pet in dono.pets])
 
 
 @app.route("/donos", methods=["POST"])

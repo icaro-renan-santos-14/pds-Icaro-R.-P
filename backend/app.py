@@ -43,28 +43,38 @@ class Pet(db.Model):
         }
 
 
-def dados_dono_validos(dados):
-    return (
-        isinstance(dados, dict)
-        and isinstance(dados.get("nome"), str)
-        and bool(dados["nome"].strip())
-        and isinstance(dados.get("telefone"), str)
-        and bool(dados["telefone"].strip())
-    )
+def validar_dono(dados):
+    erros = []
+    if not isinstance(dados, dict):
+        return ["O corpo da requisicao precisa ser um JSON de objeto"]
+
+    if not isinstance(dados.get("nome"), str) or not dados["nome"].strip():
+        erros.append("O campo nome e obrigatorio e nao pode ser vazio")
+    if not isinstance(dados.get("telefone"), str) or not dados["telefone"].strip():
+        erros.append("O campo telefone e obrigatorio e nao pode ser vazio")
+    return erros
 
 
-def dados_pet_validos(dados):
-    return (
-        isinstance(dados, dict)
-        and isinstance(dados.get("nome"), str)
-        and bool(dados["nome"].strip())
-        and isinstance(dados.get("especie"), str)
-        and bool(dados["especie"].strip())
-        # bool tambem e um tipo de int em Python; aqui queremos so inteiros.
-        and type(dados.get("idade")) is int
-        and dados["idade"] >= 0
-        and type(dados.get("dono_id")) is int
-    )
+def validar_pet(dados):
+    erros = []
+    if not isinstance(dados, dict):
+        return ["O corpo da requisicao precisa ser um JSON de objeto"]
+
+    if not isinstance(dados.get("nome"), str) or not dados["nome"].strip():
+        erros.append("O campo nome e obrigatorio e nao pode ser vazio")
+    if not isinstance(dados.get("especie"), str) or not dados["especie"].strip():
+        erros.append("O campo especie e obrigatorio e nao pode ser vazio")
+
+    idade = dados.get("idade")
+    if type(idade) is not int or idade < 0:
+        erros.append("O campo idade deve ser um numero inteiro maior ou igual a zero")
+
+    dono_id = dados.get("dono_id")
+    if type(dono_id) is not int:
+        erros.append("O campo dono_id deve ser um numero inteiro")
+    elif db.session.get(Dono, dono_id) is None:
+        erros.append("Nao existe dono com esse dono_id")
+    return erros
 
 
 # ---------------------------------------------------------------
@@ -92,8 +102,9 @@ def buscar_dono(dono_id):
 def criar_dono():
     dados = request.get_json(silent=True)
 
-    if not dados_dono_validos(dados):
-        return jsonify({"erro": "Informe nome e telefone"}), 400
+    erros = validar_dono(dados)
+    if erros:
+        return jsonify({"erros": erros}), 400
 
     novo_dono = Dono(nome=dados["nome"], telefone=dados["telefone"])
     db.session.add(novo_dono)
@@ -106,8 +117,9 @@ def criar_dono():
 def atualizar_dono(dono_id):
     dados = request.get_json(silent=True)
 
-    if not dados_dono_validos(dados):
-        return jsonify({"erro": "Informe nome e telefone"}), 400
+    erros = validar_dono(dados)
+    if erros:
+        return jsonify({"erros": erros}), 400
 
     dono = db.session.get(Dono, dono_id)
 
@@ -174,8 +186,9 @@ def buscar_pet(pet_id):
 def criar_pet():
     dados = request.get_json(silent=True)
 
-    if not dados_pet_validos(dados):
-        return jsonify({"erro": "Informe nome, especie, idade e dono_id"}), 400
+    erros = validar_pet(dados)
+    if erros:
+        return jsonify({"erros": erros}), 400
 
     dono = db.session.get(Dono, dados["dono_id"])
 
@@ -198,8 +211,9 @@ def criar_pet():
 def atualizar_pet(pet_id):
     dados = request.get_json(silent=True)
 
-    if not dados_pet_validos(dados):
-        return jsonify({"erro": "Informe nome, especie, idade e dono_id"}), 400
+    erros = validar_pet(dados)
+    if erros:
+        return jsonify({"erros": erros}), 400
 
     pet = db.session.get(Pet, pet_id)
 
